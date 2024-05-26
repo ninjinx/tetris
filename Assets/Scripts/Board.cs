@@ -144,4 +144,20 @@ public class Board : MonoBehaviour
             }
         }
     }
+
+    // ブロックがボードの上限を超えていないか判定
+    public bool IsOverLimit(Block block)
+    {
+        foreach (Transform child in block.transform)
+        {
+            Vector2 pos = Vector2Int.RoundToInt(child.position);
+
+            if (pos.y >= height - header)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
@@ -15,6 +16,11 @@ public class GameManager : MonoBehaviour
     private float nextKeyLeftRightTimer; // 左右移動入力を管理するタイマー
     private float nextKeyRotateTimer; // 回転入力を管理するタイマー
 
+    [SerializeField]
+    private GameObject gameOverPanel; // ゲームオーバーパネル
+
+    // ゲームオーバーか
+    private bool isGameOver;
 
     [SerializeField]
     private float keyDownInterval; // 下移動入力のインターバル
@@ -48,29 +54,24 @@ public class GameManager : MonoBehaviour
         {
             activeBlock = spawner.SpawnBlock();
         }
+
+        // ゲームオーバーパネルを非表示
+        if (gameOverPanel.activeInHierarchy)
+        {
+            gameOverPanel.SetActive(false);
+        }
     }
 
     private void Update()
     {
-        // 有効なブロックがあれば移動
-        if (activeBlock)
+        // 有効なブロックが存在かつゲームオーバーでなければ移動
+        if (activeBlock && !isGameOver)
         {
-            // プレイヤーの入力を受け付ける
+            // プレイヤーの入力
             PlayerInput();
 
-            // 自然落下時間を超えているか判定
-            if (Time.time > nextDropTimer)
-            {
-                // 次のブロックが落下する時間を設定
-                nextDropTimer = Time.time + dropInterval;
-
-                // 自然落下処理を実行
-                activeBlock.MoveDown();
-                if (!board.CheckPosition(activeBlock))
-                {
-                    BottomBoard();
-                }
-            }
+            // ブロックの自然落下
+            DropBlock();
         }
     }
 
@@ -143,13 +144,42 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    // 自然落下処理
+    public void DropBlock()
+    {
+        // 自然落下時間を超えているか判定
+        if (Time.time > nextDropTimer)
+        {
+            // 次のブロックが落下する時間を設定
+            nextDropTimer = Time.time + dropInterval;
+
+            // ブロックを下に移動
+            activeBlock.MoveDown();
+
+            // ブロックが底に達しているか判定
+            if (!board.CheckPosition(activeBlock))
+            {
+                // ブロックの位置をボードに格納
+                activeBlock.MoveUp();
+                board.StoreBlockPosition(activeBlock);
+
+                if (board.IsOverLimit(activeBlock))
+                {
+                    // 上限を超えていればゲームオーバー
+                    GameOver();
+                }
+                else
+                {
+                    // 上限に達していない場合は終了処理
+                    BottomBoard();
+                }
+            }
+        }
+    }
+
     // ブロックが底に到達したときの処理
     public void BottomBoard()
     {
-        // ブロックの位置をボードに格納
-        activeBlock.MoveUp();
-        board.StoreBlockPosition(activeBlock);
-
         // ボードの行を削除
         board.ClearAllRows();
 
@@ -160,5 +190,21 @@ public class GameManager : MonoBehaviour
         nextKeyDownTimer = Time.time + keyDownInterval;
         nextKeyLeftRightTimer = Time.time + keyLeftRightInterval;
         nextKeyRotateTimer = Time.time + keyRotateInterval;
+    }
+
+    // ゲームオーバー処理
+    public void GameOver()
+    {
+        // ゲームオーバーパネルを表示
+        gameOverPanel.SetActive(true);
+
+        // ゲームオーバー
+        isGameOver = true;
+    }
+
+    // シーンの再読み込みする（ボタン押下で呼ぶ）
+    public void Restart()
+    {
+        SceneManager.LoadScene(0);
     }
 }
