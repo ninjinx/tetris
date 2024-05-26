@@ -23,6 +23,9 @@ public class GameManager : MonoBehaviour
         // ボードを取得
         board = GameObject.FindObjectOfType<Board>();
 
+        // 生成器の位置を修正
+        spawner.transform.position = Vector3Int.RoundToInt(spawner.transform.position);
+
         // ブロック生成
         if (!activeBlock)
         {
@@ -48,6 +51,9 @@ public class GameManager : MonoBehaviour
                 {
                     // ボードが枠外に出たらブロックを戻す
                     activeBlock.MoveUp();
+
+                    // ブロックの位置をボードに格納
+                    board.StoreBlockPosition(activeBlock);
 
                     // 新規にブロックを生成
                     activeBlock = spawner.SpawnBlock();
