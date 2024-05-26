@@ -9,13 +9,22 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        // FindObjectOftype‚Í—Ç‚­‚È‚¢
+        // FindObjectOftype
         spawner = GameObject.FindObjectOfType<Spawner>();
 
-        // ƒXƒ|ƒi[ƒNƒ‰ƒX‚©‚çƒuƒƒbƒN¶¬ŠÖ”‚ğ“Ç‚ñ‚Å•Ï”‚ÉŠi”[‚·‚é
+        // ãƒ–ãƒ­ãƒƒã‚¯ç”Ÿæˆ
         if (!activeBlock)
         {
             activeBlock = spawner.SpawnBlock();
+        }
+    }
+
+    private void Update()
+    {
+        // æœ‰åŠ¹ãªãƒ–ãƒ­ãƒƒã‚¯ãŒã‚ã‚Œã°ç§»å‹•
+        if (activeBlock)
+        {
+            activeBlock.MoveDown();
         }
     }
 }
