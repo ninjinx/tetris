@@ -4,7 +4,6 @@ using UnityEngine;
 
 public class Board : MonoBehaviour
 {
-    // �ϐ�
     [SerializeField]
     private Transform emptySprite;
 
@@ -16,7 +15,6 @@ public class Board : MonoBehaviour
         CreateBoard();
     }
 
-    // �֐�
     void CreateBoard()
     {
         if (emptySprite)
@@ -35,5 +33,27 @@ public class Board : MonoBehaviour
                 }
             }
         }
+    }
+
+    // ブロックがボード内にあるか判定
+    public bool CheckPosition(Block block)
+    {
+        foreach (Transform child in block.transform)
+        {
+            Vector2 pos = Vector2Int.RoundToInt(child.position);
+
+            if (!IsInsideBorder(pos))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // ボード内にあるか判定
+    bool IsInsideBorder(Vector2 pos)
+    {
+        return ((int)pos.x >= 0 && (int)pos.x < width && (int)pos.y >= 0);
     }
 }

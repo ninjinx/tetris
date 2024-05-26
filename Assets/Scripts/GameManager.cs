@@ -8,6 +8,8 @@ public class GameManager : MonoBehaviour
     Spawner spawner;
     // 有効なブロック
     Block activeBlock;
+    // ボード
+    Board board;
 
     [SerializeField]
     private float dropInterval = 0.25f; // ブロックが落下すまでのインターバル
@@ -17,6 +19,9 @@ public class GameManager : MonoBehaviour
     {
         // FindObjectOftype
         spawner = GameObject.FindObjectOfType<Spawner>();
+
+        // ボードを取得
+        board = GameObject.FindObjectOfType<Board>();
 
         // ブロック生成
         if (!activeBlock)
@@ -37,6 +42,16 @@ public class GameManager : MonoBehaviour
             if (activeBlock)
             {
                 activeBlock.MoveDown();
+
+                // ボード内にあるか判定
+                if (!board.CheckPosition(activeBlock))
+                {
+                    // ボードが枠外に出たらブロックを戻す
+                    activeBlock.MoveUp();
+
+                    // 新規にブロックを生成
+                    activeBlock = spawner.SpawnBlock();
+                }
             }
         }
     }
