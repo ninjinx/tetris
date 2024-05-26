@@ -4,8 +4,14 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
+    // ブロック生成器
     Spawner spawner;
+    // 有効なブロック
     Block activeBlock;
+
+    [SerializeField]
+    private float dropInterval = 0.25f; // ブロックが落下すまでのインターバル
+    float nextDropTimer; // 次にブロックが落下するまでの時間
 
     private void Start()
     {
@@ -21,10 +27,17 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        // 有効なブロックがあれば移動
-        if (activeBlock)
+        // 次のブロックが落下する時間を超えているか判定
+        if (Time.time > nextDropTimer)
         {
-            activeBlock.MoveDown();
+            // 次のブロックが落下する時間を設定
+            nextDropTimer = Time.time + dropInterval;
+
+            // 有効なブロックがあれば移動
+            if (activeBlock)
+            {
+                activeBlock.MoveDown();
+            }
         }
     }
 }
