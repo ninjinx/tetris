@@ -201,7 +201,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   keyDownInterval: 0.05
-  keyLeftRightInterval: 0.2
+  keyLeftRightInterval: 0.1
   keyRotateInterval: 0.25
   dropInterval: 0.25
 --- !u!4 &430359459
