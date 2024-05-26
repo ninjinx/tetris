@@ -16,11 +16,15 @@ public class GameManager : MonoBehaviour
     private float nextKeyLeftRightTimer; // 左右移動入力を管理するタイマー
     private float nextKeyRotateTimer; // 回転入力を管理するタイマー
 
-    [SerializeField]
-    private GameObject gameOverPanel; // ゲームオーバーパネル
-
     // ゲームオーバーか
     private bool isGameOver;
+    // ゲームが開始されたか
+    private bool isGameStart;
+
+    [SerializeField]
+    private GameObject gameOverPanel; // ゲームオーバーパネル
+    [SerializeField]
+    private GameObject gameStartPanel; // ゲームスタートパネル
 
     [SerializeField]
     private float keyDownInterval; // 下移動入力のインターバル
@@ -49,10 +53,14 @@ public class GameManager : MonoBehaviour
         nextKeyLeftRightTimer = Time.time + keyLeftRightInterval;
         nextKeyRotateTimer = Time.time + keyRotateInterval;
 
-        // ブロック生成
-        if (!activeBlock)
+        // ステータスの初期化
+        isGameStart = false;
+        isGameOver = false;
+
+        // ゲーム開始パネルを表示
+        if (!gameStartPanel.activeInHierarchy)
         {
-            activeBlock = spawner.SpawnBlock();
+            gameStartPanel.SetActive(true);
         }
 
         // ゲームオーバーパネルを非表示
@@ -65,7 +73,7 @@ public class GameManager : MonoBehaviour
     private void Update()
     {
         // 有効なブロックが存在かつゲームオーバーでなければ移動
-        if (activeBlock && !isGameOver)
+        if (activeBlock && !isGameOver && isGameStart)
         {
             // プレイヤーの入力
             PlayerInput();
@@ -200,6 +208,23 @@ public class GameManager : MonoBehaviour
 
         // ゲームオーバー
         isGameOver = true;
+    }
+
+
+    // ゲームスタート処理
+    public void GameStart()
+    {
+        // ゲームスタートパネルを非表示
+        gameStartPanel.SetActive(false);
+
+        // ブロック生成
+        if (!activeBlock)
+        {
+            activeBlock = spawner.SpawnBlock();
+        }
+
+        // ゲームスタート
+        isGameStart = true;
     }
 
     // シーンの再読み込みする（ボタン押下で呼ぶ）
