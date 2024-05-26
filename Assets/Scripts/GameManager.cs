@@ -143,13 +143,15 @@ public class GameManager : MonoBehaviour
         }
     }
 
-
     // ブロックが底に到達したときの処理
     public void BottomBoard()
     {
         // ブロックの位置をボードに格納
         activeBlock.MoveUp();
         board.StoreBlockPosition(activeBlock);
+
+        // ボードの行を削除
+        board.ClearAllRows();
 
         // 新規にブロックを生成
         activeBlock = spawner.SpawnBlock();

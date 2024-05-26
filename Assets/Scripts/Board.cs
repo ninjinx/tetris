@@ -82,4 +82,66 @@ public class Board : MonoBehaviour
             grid[(int)pos.x, (int)pos.y] = child;
         }
     }
+
+    // 全ての行を削除する
+    public void ClearAllRows()
+    {
+        for (int y = 0; y < height; y++)
+        {
+            if (IsRowFull(y))
+            {
+                ClearRow(y);
+                MoveAllRowsDown(y + 1);
+                y--;
+            }
+        }
+    }
+
+
+    // 行が揃っているか判定
+    bool IsRowFull(int y)
+    {
+        for (int x = 0; x < width; x++)
+        {
+            if (grid[x, y] == null)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // 行を削除
+    void ClearRow(int y)
+    {
+        for (int x = 0; x < width; x++)
+        {
+            Destroy(grid[x, y].gameObject);
+            grid[x, y] = null;
+        }
+    }
+
+    // 総ての行を下に移動
+    void MoveAllRowsDown(int y)
+    {
+        for (int i = y; i < height; i++)
+        {
+            MoveRowDown(i);
+        }
+    }
+
+    // 行を下に移動
+    void MoveRowDown(int y)
+    {
+        for (int x = 0; x < width; x++)
+        {
+            if (grid[x, y] != null)
+            {
+                grid[x, y - 1] = grid[x, y];
+                grid[x, y] = null;
+                grid[x, y - 1].position += new Vector3(0, -1, 0);
+            }
+        }
+    }
 }
