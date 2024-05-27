@@ -4,11 +4,11 @@ using UnityEngine;
 
 public class Spawner : MonoBehaviour
 {
-    // ”z—ñ
+    // ï¿½zï¿½ï¿½
     [SerializeField]
     Block[] Blocks;
 
-    // block‚ğƒ‰ƒ“ƒ_ƒ€‚É‘I‘ğ
+    // blockï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½_ï¿½ï¿½ï¿½É‘Iï¿½ï¿½
     Block GetRandomBlock()
     {
         int i = Random.Range(0, Blocks.Length);
@@ -23,7 +23,7 @@ public class Spawner : MonoBehaviour
         }
     }
 
-    // ‘I‚Î‚ê‚½ƒuƒƒbƒN‚ğ¶¬‚·‚é
+    // ï¿½Iï¿½Î‚ê‚½ï¿½uï¿½ï¿½ï¿½bï¿½Nï¿½ğ¶ï¿½ï¿½ï¿½ï¿½ï¿½
     public Block SpawnBlock()
     {
         Block block = Instantiate(GetRandomBlock(), transform.position, Quaternion.identity);
@@ -38,4 +38,3 @@ public class Spawner : MonoBehaviour
         }
     }
 }
- 

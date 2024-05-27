@@ -5,6 +5,19 @@ using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
+    // 下方向への射出係数（初期値）
+    private float defaultDownForce = -10;
+
+    // 最大の射出係数
+    private float maxForce = 10;
+
+    // 下方向への射出係数
+    private float downForce = 0;
+    // 左方向への射出係数
+    private float leftForce = 0;
+    // 右方向への射出係数
+    private float rightForce = 0;
+
     // ブロック生成器
     Spawner spawner;
     // 有効なブロック
@@ -20,6 +33,8 @@ public class GameManager : MonoBehaviour
     private bool isGameOver;
     // ゲームが開始されたか
     private bool isGameStart;
+    // ボタンを押しているか
+    private bool isButtonDown;
 
     [SerializeField]
     private GameObject gameOverPanel; // ゲームオーバーパネル
@@ -36,6 +51,10 @@ public class GameManager : MonoBehaviour
     [SerializeField]
     private float dropInterval = 0.25f; // ブロックが落下すまでのインターバル
     float nextDropTimer; // 次にブロックが落下するまでの時間
+
+    [SerializeField]
+    private float spawnInterval = 0.1f; // ブロックが生成されるまでのインターバル
+    float nextSpawnTimer; // 次にブロックが生成されるまでの時間
 
     private void Start()
     {
@@ -56,6 +75,7 @@ public class GameManager : MonoBehaviour
         // ステータスの初期化
         isGameStart = false;
         isGameOver = false;
+        isButtonDown = false;
 
         // ゲーム開始パネルを表示
         if (!gameStartPanel.activeInHierarchy)
@@ -72,83 +92,69 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        // 有効なブロックが存在かつゲームオーバーでなければ移動
-        if (activeBlock && !isGameOver && isGameStart)
+        // ゲーム開始中か
+        if (isGameStart)
         {
-            // プレイヤーの入力
+            // プレイヤー入力
             PlayerInput();
-
-            // ブロックの自然落下
-            DropBlock();
         }
     }
 
     // ブロックの移動
     void PlayerInput()
     {
-        // 右移動
-        if (Input.GetKey(KeyCode.D) && (Time.time > nextKeyLeftRightTimer)
-         || Input.GetKeyDown(KeyCode.D))
+        // いずれかのキーが初めて押されたとき
+        if (!isButtonDown &&
+            Time.time > nextSpawnTimer &&
+            (Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.D)))
         {
-            activeBlock.MoveRight();
-            nextKeyLeftRightTimer = Time.time + keyLeftRightInterval;
+            // 次のブロックが生成可能になる時間を設定
+            nextSpawnTimer = Time.time + spawnInterval;
 
-            if (!board.CheckPosition(activeBlock))
-            {
-                activeBlock.MoveLeft();
-            }
+            // 新規にブロックを生成
+            activeBlock = spawner.SpawnBlock();
+
+            // 重力を無効にする
+            activeBlock.GetComponent<Rigidbody2D>().isKinematic = true;
+
+            // ボタンを押している状態にする
+            isButtonDown = true;
         }
 
-        // 左移動
-        if (Input.GetKey(KeyCode.A) && (Time.time > nextKeyLeftRightTimer)
-         || Input.GetKeyDown(KeyCode.A))
+        // 下方向の力をためる
+        if (Input.GetKey(KeyCode.S) && downForce < maxForce && isButtonDown)
         {
-            activeBlock.MoveLeft();
-            nextKeyLeftRightTimer = Time.time + keyLeftRightInterval;
-
-            if (!board.CheckPosition(activeBlock))
-            {
-                activeBlock.MoveRight();
-            }
+            downForce += 0.1f;
         }
 
-        // 下移動
-        if (Input.GetKey(KeyCode.S) && (Time.time > nextKeyDownTimer)
-         || Input.GetKeyDown(KeyCode.S))
+        // 左方向の力をためる
+        if (Input.GetKey(KeyCode.A) && leftForce < maxForce && isButtonDown)
         {
-            activeBlock.MoveDown();
-            nextKeyDownTimer = Time.time + keyDownInterval;
-
-            if (!board.CheckPosition(activeBlock))
-            {
-                activeBlock.MoveUp();
-            }
+            leftForce += 0.1f;
         }
 
-        // 右回転
-        if (Input.GetKey(KeyCode.E) && (Time.time > nextKeyRotateTimer)
-         || Input.GetKeyDown(KeyCode.E))
+        // 右方向の力をためる
+        if (Input.GetKey(KeyCode.D) && rightForce < maxForce && isButtonDown)
         {
-            activeBlock.RotateRight();
-            nextKeyRotateTimer = Time.time + keyRotateInterval;
-
-            if (!board.CheckPosition(activeBlock))
-            {
-                activeBlock.RotateLeft();
-            }
+            rightForce += 0.1f;
         }
 
-        // 左回転 
-        if (Input.GetKey(KeyCode.Q) && (Time.time > nextKeyRotateTimer)
-         || Input.GetKeyDown(KeyCode.Q))
+        // いずれかのボタンが離されたとき
+        if ((Input.GetKeyUp(KeyCode.S) || Input.GetKeyUp(KeyCode.A) || Input.GetKeyUp(KeyCode.D)) && isButtonDown)
         {
-            activeBlock.RotateLeft();
-            nextKeyRotateTimer = Time.time + keyRotateInterval;
+            // ボタンを離した状態にする
+            isButtonDown = false;
 
-            if (!board.CheckPosition(activeBlock))
-            {
-                activeBlock.RotateRight();
-            }
+            // 重力を有効にする
+            activeBlock.GetComponent<Rigidbody2D>().isKinematic = false;
+
+            // 力を加える
+            activeBlock.GetComponent<Rigidbody2D>().AddForce(new Vector2(rightForce - leftForce, defaultDownForce - downForce), ForceMode2D.Impulse);
+
+            // 力をリセット
+            downForce = 0;
+            leftForce = 0;
+            rightForce = 0;
         }
     }
 
@@ -218,10 +224,10 @@ public class GameManager : MonoBehaviour
         gameStartPanel.SetActive(false);
 
         // ブロック生成
-        if (!activeBlock)
-        {
-            activeBlock = spawner.SpawnBlock();
-        }
+        // if (!activeBlock)
+        // {
+        //     activeBlock = spawner.SpawnBlock();
+        // }
 
         // ゲームスタート
         isGameStart = true;
