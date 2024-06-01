@@ -71,6 +71,9 @@ public class Block : MonoBehaviour
         // 衝突中の同じ種類のオブジェクト一覧が2つ以上のとき
         if (collisionObjects.Count >= 2)
         {
+            // スコアを加算
+            FindObjectOfType<GameManager>().AddScore((collisionObjects.Count + 1) * 100);
+
             // 全てのオブジェクトを削除
             foreach (GameObject obj in collisionObjects.ToArray())
             {

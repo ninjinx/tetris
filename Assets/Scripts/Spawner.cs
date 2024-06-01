@@ -23,10 +23,11 @@ public class Spawner : MonoBehaviour
         }
     }
 
-    // �I�΂ꂽ�u���b�N�𐶐�����
     public Block SpawnBlock()
     {
-        Block block = Instantiate(GetRandomBlock(), transform.position, Quaternion.identity);
+        // ブロックを生成
+        Block block = Instantiate(GetRandomBlock(), transform.position, Quaternion.Euler(0, 0, Random.Range(0, 4) * 90));
+
 
         if (block)
         {

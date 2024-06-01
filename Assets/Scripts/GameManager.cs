@@ -18,6 +18,9 @@ public class GameManager : MonoBehaviour
     // 右方向への射出係数
     private float rightForce = 0;
 
+    // 単位時間ごとの射出係数の増加量
+    private float forceIncrease = 20;
+
     // ブロック生成器
     Spawner spawner;
     // 有効なブロック
@@ -34,7 +37,9 @@ public class GameManager : MonoBehaviour
     // ゲームが開始されたか
     private bool isGameStart;
     // ボタンを押しているか
-    private bool isButtonDown;
+    public bool isButtonDown;
+    // スコア
+    private int score;
 
     [SerializeField]
     private GameObject gameOverPanel; // ゲームオーバーパネル
@@ -77,6 +82,9 @@ public class GameManager : MonoBehaviour
         isGameOver = false;
         isButtonDown = false;
 
+        // スコアの初期化
+        score = 0;
+
         // ゲーム開始パネルを表示
         if (!gameStartPanel.activeInHierarchy)
         {
@@ -93,7 +101,7 @@ public class GameManager : MonoBehaviour
     private void Update()
     {
         // ゲーム開始中か
-        if (isGameStart)
+        if (isGameStart && !isGameOver)
         {
             // プレイヤー入力
             PlayerInput();
@@ -124,19 +132,20 @@ public class GameManager : MonoBehaviour
         // 下方向の力をためる
         if (Input.GetKey(KeyCode.S) && downForce < maxForce && isButtonDown)
         {
-            downForce += 0.1f;
+            // 下方向への射出係数を時間に応じて増加
+            downForce += Time.deltaTime * forceIncrease;
         }
 
         // 左方向の力をためる
         if (Input.GetKey(KeyCode.A) && leftForce < maxForce && isButtonDown)
         {
-            leftForce += 0.1f;
+            leftForce += Time.deltaTime * forceIncrease;
         }
 
         // 右方向の力をためる
         if (Input.GetKey(KeyCode.D) && rightForce < maxForce && isButtonDown)
         {
-            rightForce += 0.1f;
+            rightForce += Time.deltaTime * forceIncrease;
         }
 
         // いずれかのボタンが離されたとき
@@ -209,11 +218,14 @@ public class GameManager : MonoBehaviour
     // ゲームオーバー処理
     public void GameOver()
     {
+        // ゲームオーバー状態に更新
+        isGameOver = true;
+
+        // スコアを上書き
+        gameOverPanel.transform.Find("Score").GetComponent<TMPro.TextMeshProUGUI>().text = score.ToString();
+
         // ゲームオーバーパネルを表示
         gameOverPanel.SetActive(true);
-
-        // ゲームオーバー
-        isGameOver = true;
     }
 
 
@@ -237,5 +249,11 @@ public class GameManager : MonoBehaviour
     public void Restart()
     {
         SceneManager.LoadScene(0);
+    }
+
+    // スコアを追加
+    public void AddScore(int value)
+    {
+        score += value;
     }
 }
