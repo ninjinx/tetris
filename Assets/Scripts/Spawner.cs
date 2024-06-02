@@ -4,11 +4,12 @@ using UnityEngine;
 
 public class Spawner : MonoBehaviour
 {
-    // �z��
     [SerializeField]
     Block[] Blocks;
 
-    // block�������_���ɑI��
+    [SerializeField]
+    Block OjamaBlock;
+
     Block GetRandomBlock()
     {
         int i = Random.Range(0, Blocks.Length);
@@ -37,5 +38,12 @@ public class Spawner : MonoBehaviour
         {
             return null;
         }
+    }
+
+    // おじゃまブロックを生成
+    public void SpawnOjamaBlock()
+    {
+        // ブロックを生成
+        Block block = Instantiate(OjamaBlock, transform.position, Quaternion.Euler(0, 0, Random.Range(0, 4) * 90));
     }
 }

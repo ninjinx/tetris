@@ -8,6 +8,10 @@ public class Block : MonoBehaviour
     [SerializeField]
     private bool canRotate = true;
 
+    // 消滅可能か
+    [SerializeField]
+    private bool canDestroy = true;
+
     // 衝突中の同じ種類のオブジェクト一覧 
     private List<GameObject> collisionObjects = new List<GameObject>();
 
@@ -63,7 +67,7 @@ public class Block : MonoBehaviour
     private void OnCollisionEnter2D(Collision2D collision)
     {
         // 同じプレハブ同士が衝突したときリストに存在しない場合
-        if (collision.gameObject.name == gameObject.name && !collisionObjects.Contains(collision.gameObject))
+        if (canDestroy && collision.gameObject.name == gameObject.name && !collisionObjects.Contains(collision.gameObject))
         {
             collisionObjects.Add(collision.gameObject);
         }

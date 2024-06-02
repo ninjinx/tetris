@@ -7,43 +7,40 @@ using UnityEngine;
 
 public class GamingHubClient : IGamingHubReceiver
 {
-    private Dictionary<string, GameObject> _players = new();
+    private List<Player> _players = new List<Player>();
 
     private IGamingHub _client;
 
-    private readonly GameObject _ownPlayer;
+    private GameManager _gameManager;
 
-    public GamingHubClient(GameObject player)
+    private string _ownPlayerName;
+
+    // コンストラクタ
+    public GamingHubClient(GameManager gameManager)
     {
-        _ownPlayer = player;
-    }
-
-    public async ValueTask<GameObject> ConnectAsync(ChannelBase grpcChannel, string roomName, string playerName)
-    {
-        _client = await StreamingHubClient.ConnectAsync<IGamingHub, IGamingHubReceiver>(grpcChannel, this);
-
-        var roomPlayers = await _client.JoinAsync(roomName, playerName, Vector3.zero, Quaternion.identity);
-        foreach (var player in roomPlayers) (this as IGamingHubReceiver).OnJoin(player);
-
-        return _players[playerName];
+        _gameManager = gameManager;
     }
 
     // methods send to server.
-
-    public ValueTask LeaveAsync(string playerName)
+    public async Task JoinAsync(ChannelBase grpcChannel, string roomName, string playerName)
     {
-        foreach (var cube in _players)
-            if (cube.Value.name != playerName)
-                Object.Destroy(cube.Value);
+        _client = await StreamingHubClient.ConnectAsync<IGamingHub, IGamingHubReceiver>(grpcChannel, this);
 
-        return _client.LeaveAsync();
+        var roomPlayers = await _client.JoinAsync(roomName, playerName);
+
+        Debug.Log("--- Joined Players ---");
+        foreach (var player in roomPlayers)
+        {
+            Debug.Log("name: " + player.Name);
+        };
+        Debug.Log("----------------------");
+
+        _ownPlayerName = playerName;
     }
 
-    public ValueTask MoveAsync(Vector3 position, Quaternion rotation)
+    public async Task OjamaAsync()
     {
-        // たまにnullになることがあるので、nullチェックを入れる
-        if (_client == null) return new ValueTask();
-        return _client.MoveAsync(position, rotation);
+        await _client.OjamaAsync();
     }
 
     // dispose client-connection before channel.ShutDownAsync is important!
@@ -62,39 +59,31 @@ public class GamingHubClient : IGamingHubReceiver
 
     void IGamingHubReceiver.OnJoin(Player player)
     {
-        Debug.Log("Join Player:" + player.Name);
+        Debug.Log("Received Join Player:" + player.Name);
 
-        // 自分の場合は自分のオブジェクトを生成しない
-        if (_ownPlayer.name == player.Name)
+        // 自分以外の場合は配列に追加
+        if (_ownPlayerName != player.Name)
         {
-            _players[player.Name] = _ownPlayer;
-        }
-        else
-        {
-            var playerObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            var LitMat = Resources.Load<Material>("LitMat");
-            playerObject.GetComponent<Renderer>().material = LitMat;
-            playerObject.name = player.Name;
-            playerObject.transform.SetPositionAndRotation(player.Position, player.Rotation);
-            _players[player.Name] = playerObject;
+            _players.Add(player);
         }
     }
 
     void IGamingHubReceiver.OnLeave(Player player)
     {
         Debug.Log("Leave Player:" + player.Name);
-
-        if (_players.TryGetValue(player.Name, out var cube)) Object.Destroy(cube);
     }
 
-    void IGamingHubReceiver.OnMove(Player player)
+    void IGamingHubReceiver.OnOjama(Player player)
     {
-        Debug.Log("Move Player:" + player.Name);
+        Debug.Log("Ojama Pushed:" + player.Name);
 
-        if (_players.TryGetValue(player.Name, out var cube))
+        // 自分以外のユーザーからOjamaを受け取った場合はログを出力
+        if (_ownPlayerName != player.Name)
         {
-            if (player.Name == _ownPlayer.name) return;
-            cube.transform.SetPositionAndRotation(player.Position, player.Rotation);
+            Debug.Log("Ojama!");
+
+            // おじゃまブロックを生成
+            _gameManager.GenerateOjamaBlock();
         }
     }
 }

@@ -59,6 +59,8 @@ public class GameManager : MonoBehaviour
     private GameObject gameOverPanel; // ゲームオーバーパネル
     [SerializeField]
     private GameObject gameStartPanel; // ゲームスタートパネル
+    [SerializeField]
+    private GameObject mainPanel; // ゲームメインパネル
 
     [SerializeField]
     private float keyDownInterval; // 下移動入力のインターバル
@@ -103,6 +105,12 @@ public class GameManager : MonoBehaviour
         if (!gameStartPanel.activeInHierarchy)
         {
             gameStartPanel.SetActive(true);
+        }
+
+        // メインパネルを非表示
+        if (mainPanel.activeInHierarchy)
+        {
+            mainPanel.SetActive(false);
         }
 
         // ゲームオーバーパネルを非表示
@@ -238,6 +246,9 @@ public class GameManager : MonoBehaviour
         // スコアを上書き
         gameOverPanel.transform.Find("Score").GetComponent<TMPro.TextMeshProUGUI>().text = _score.ToString();
 
+        // メインパネルを非表示
+        mainPanel.SetActive(false);
+
         // ゲームオーバーパネルを表示
         gameOverPanel.SetActive(true);
     }
@@ -251,6 +262,9 @@ public class GameManager : MonoBehaviour
 
         // ゲームスタートパネルを非表示
         gameStartPanel.SetActive(false);
+
+        // メインパネルを表示
+        mainPanel.SetActive(true);
 
         // ゲームスタート
         _isGameStart = true;
@@ -272,18 +286,29 @@ public class GameManager : MonoBehaviour
     }
 
     // MagicOnionサーバーに接続
-    public void ConnectToServer()
+    public async void ConnectToServer()
     {
-        Debug.Log("Connecting to MagicOnion Server...");
+        if (!_isConnected)
+        {
+            Debug.Log("Connecting to MagicOnion Server...");
 
-        // YetAnotherHttpHandlerを使用してHTTP/2のみの通信を行う
-        var handler = new YetAnotherHttpHandler();
-        handler.Http2Only = true;
-        var options = new GrpcChannelOptions { HttpHandler = handler, UnsafeUseInsecureChannelCallCredentials = false };
+            // YetAnotherHttpHandlerを使用してHTTP/2のみの通信を行う
+            var handler = new YetAnotherHttpHandler();
+            handler.Http2Only = true;
+            var options = new GrpcChannelOptions { HttpHandler = handler, UnsafeUseInsecureChannelCallCredentials = false };
 
-        // サービスに接続
-        _channel = GrpcChannel.ForAddress("http://localhost:5001", options);
-        _serviceClient = MagicOnionClient.Create<IMyFirstService>(_channel);
+            // サービスに接続
+            _channel = GrpcChannel.ForAddress("http://localhost:5001", options);
+            _serviceClient = MagicOnionClient.Create<IMyFirstService>(_channel);
+
+            // ストリーミングハブに接続
+            var myPlayerName = "player" + UnityEngine.Random.Range(0, 1000);
+            Debug.Log($"My Name: {myPlayerName}");
+            _hubClient = new GamingHubClient(this);
+            await _hubClient.JoinAsync(_channel, "room", myPlayerName);
+
+            _isConnected = true;
+        }
     }
 
     // MagicOnion足し算の和を求める
@@ -294,5 +319,19 @@ public class GameManager : MonoBehaviour
 
         // 結果を表示
         Debug.Log($"Sum: {result}");
+    }
+
+    // おじゃまの実行
+    public async void Ojama()
+    {
+        // サービスにおじゃまリクエストを送信
+        await _hubClient.OjamaAsync();
+    }
+
+    // お邪魔の実行
+    public void GenerateOjamaBlock()
+    {
+        // お邪魔ブロックを生成
+        spawner.SpawnOjamaBlock();
     }
 }
