@@ -2,6 +2,14 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using System;
+using Cysharp.Net.Http;
+using Grpc.Core;
+using Shared.Interfaces;
+using Grpc.Net.Client;
+using MagicOnion;
+using MagicOnion.Client;
+using UnityEngine.UIElements;
 
 public class GameManager : MonoBehaviour
 {
@@ -33,13 +41,19 @@ public class GameManager : MonoBehaviour
     private float nextKeyRotateTimer; // 回転入力を管理するタイマー
 
     // ゲームオーバーか
-    private bool isGameOver;
+    private bool _isGameOver;
     // ゲームが開始されたか
-    private bool isGameStart;
+    private bool _isGameStart;
     // ボタンを押しているか
     public bool isButtonDown;
     // スコア
-    private int score;
+    private int _score;
+
+    // MagicOnionサーバー関連
+    private IMyFirstService _serviceClient; // MagicOnion: サービス
+    private GamingHubClient _hubClient; // MagicOnion: ストリーミングハブ
+    private ChannelBase _channel; // GrpcChannel
+    private bool _isConnected = false; // MagicOnionへの接続状態
 
     [SerializeField]
     private GameObject gameOverPanel; // ゲームオーバーパネル
@@ -78,12 +92,12 @@ public class GameManager : MonoBehaviour
         nextKeyRotateTimer = Time.time + keyRotateInterval;
 
         // ステータスの初期化
-        isGameStart = false;
-        isGameOver = false;
+        _isGameStart = false;
+        _isGameOver = false;
         isButtonDown = false;
 
         // スコアの初期化
-        score = 0;
+        _score = 0;
 
         // ゲーム開始パネルを表示
         if (!gameStartPanel.activeInHierarchy)
@@ -101,7 +115,7 @@ public class GameManager : MonoBehaviour
     private void Update()
     {
         // ゲーム開始中か
-        if (isGameStart && !isGameOver)
+        if (_isGameStart && !_isGameOver)
         {
             // プレイヤー入力
             PlayerInput();
@@ -219,10 +233,10 @@ public class GameManager : MonoBehaviour
     public void GameOver()
     {
         // ゲームオーバー状態に更新
-        isGameOver = true;
+        _isGameOver = true;
 
         // スコアを上書き
-        gameOverPanel.transform.Find("Score").GetComponent<TMPro.TextMeshProUGUI>().text = score.ToString();
+        gameOverPanel.transform.Find("Score").GetComponent<TMPro.TextMeshProUGUI>().text = _score.ToString();
 
         // ゲームオーバーパネルを表示
         gameOverPanel.SetActive(true);
@@ -232,17 +246,14 @@ public class GameManager : MonoBehaviour
     // ゲームスタート処理
     public void GameStart()
     {
+        // サーバーに接続
+        ConnectToServer();
+
         // ゲームスタートパネルを非表示
         gameStartPanel.SetActive(false);
 
-        // ブロック生成
-        // if (!activeBlock)
-        // {
-        //     activeBlock = spawner.SpawnBlock();
-        // }
-
         // ゲームスタート
-        isGameStart = true;
+        _isGameStart = true;
     }
 
     // シーンの再読み込みする（ボタン押下で呼ぶ）
@@ -254,6 +265,34 @@ public class GameManager : MonoBehaviour
     // スコアを追加
     public void AddScore(int value)
     {
-        score += value;
+        // 現在のスコアを表示
+        AddAsync(_score, value);
+
+        _score += value;
+    }
+
+    // MagicOnionサーバーに接続
+    public void ConnectToServer()
+    {
+        Debug.Log("Connecting to MagicOnion Server...");
+
+        // YetAnotherHttpHandlerを使用してHTTP/2のみの通信を行う
+        var handler = new YetAnotherHttpHandler();
+        handler.Http2Only = true;
+        var options = new GrpcChannelOptions { HttpHandler = handler, UnsafeUseInsecureChannelCallCredentials = false };
+
+        // サービスに接続
+        _channel = GrpcChannel.ForAddress("http://localhost:5001", options);
+        _serviceClient = MagicOnionClient.Create<IMyFirstService>(_channel);
+    }
+
+    // MagicOnion足し算の和を求める
+    public async void AddAsync(int x, int y)
+    {
+        // サービスにリクエストを送信
+        var result = await _serviceClient.SumAsync(x, y);
+
+        // 結果を表示
+        Debug.Log($"Sum: {result}");
     }
 }
